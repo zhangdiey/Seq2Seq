@@ -43,7 +43,7 @@ class Seq2SeqVectorizer(object):
             if len(target_tokens) > max_target_length:
                 max_target_length = len(target_tokens)
             for token in target_tokens:
-                source_vocab.add_token(token)
+                target_vocab.add_token(token)
         
         return cls(source_vocab, target_vocab, max_source_length, max_target_length)
         
