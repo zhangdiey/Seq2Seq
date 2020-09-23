@@ -13,7 +13,8 @@ def verbose_attention(query_vector, key_vectors, value_vectors):
     vector_scores = \
         torch.sum(key_vectors * query_vector.view(batch,
                                                   1,
-                                                  vector_size))
+                                                  vector_size),
+                  dim=2)
     vector_probabilities = F.softmax(vector_scores, dim=1)
     weighted_vectors = \
         value_vectors * vector_probabilities.view(batch,
@@ -65,7 +66,7 @@ class GRUDecoder(BasicDecoder):
 
     
 
-    def forward(self, encoder_state, initial_hiddent_state, target_sequence,
+    def forward(self, encoder_state, initial_hidden_state, target_sequence,
                 sample_probability):
         """ The forward pass of the model
             
@@ -85,7 +86,7 @@ class GRUDecoder(BasicDecoder):
             target_sequence = target_sequence.permute(1, 0)
 
         # use the last encoder state as the initial hiddent state
-        h_t = self.hidden_map(initial_hiddent_state)
+        h_t = self.hidden_map(initial_hidden_state)
 
         batch = encoder_state.size(0)
         # initialize context vectors to zeros
@@ -107,6 +108,8 @@ class GRUDecoder(BasicDecoder):
         for i in range(output_sequence_size):
             # a helper Boolean and the teacher y_t_index
             use_sample = np.random.random() < sample_probability
+            if not use_sample:
+                y_t_index = target_sequence[i]
 
             # Step 1: Embed word and concat with previous context
             y_input_vector = self.target_embedding(y_t_index)
@@ -117,23 +120,22 @@ class GRUDecoder(BasicDecoder):
             self._cached_ht.append(h_t.cpu().data.numpy())
 
             # Step 3: Use current hidden vector to attend to encoder state
-            context_vectors, p_atten, _ = \
-                verbose_attention(query_state=h_t,
+            context_vectors, p_attn = \
+                verbose_attention(query_vector=h_t,
                                   key_vectors=encoder_state,
                                   value_vectors=encoder_state)
 
             # auxiliary: cache the attention probabilities for visualization
-            self._cached_p_attn.append(p_atten.detach().cpu().numpy())
+            self._cached_p_attn.append(p_attn.detach().cpu().numpy())
 
             # Step 4: Use current hidden and context vectors to make a
             #         prediction for the next word
             prediction_vector = torch.cat((context_vectors, h_t), dim=1)
             score_for_y_t_index = self.classifier(prediction_vector)
-            if use_sample:
-                p_y_t_index = F.softmax(score_for_y_t_index * self._sample_temperature, dim=1)
-                y_t_index = torch.multinomial(p_y_t_index, 1).squeeze()
-            else:
-                y_t_index = target_sequence[i]
+            
+            # Sampling for next loop
+            p_y_t_index = F.softmax(score_for_y_t_index * self._sample_temperature, dim=1)
+            y_t_index = torch.multinomial(p_y_t_index, 1).squeeze()
 
             # auxiliary: collect the prediction scores
             output_vectors.append(score_for_y_t_index)
