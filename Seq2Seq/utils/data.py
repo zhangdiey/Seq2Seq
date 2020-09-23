@@ -1,4 +1,5 @@
 from torch.utils.data import DataLoader
+import numpy as np
 
 def generate_batches(dataset, batch_size, shuffle=True,
                          drop_last=True, device="cpu"):
@@ -18,7 +19,7 @@ def generate_nmt_batches(dataset, batch_size, shuffle=True,
                             shuffle=shuffle, drop_last=drop_last)
     for data_dict in dataloader:
         lengths = data_dict["source_length"].numpy()
-        sorted_length_indices = lengths.argsort()[:-1].tolist()
+        sorted_length_indices = np.flipud(lengths.argsort()).tolist()
         out_data_dict = {}
         for name, _ in data_dict.items():
             out_data_dict[name] = data_dict[name][sorted_length_indices].to(device)
