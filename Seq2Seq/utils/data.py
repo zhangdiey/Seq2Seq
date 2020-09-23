@@ -23,3 +23,7 @@ def generate_nmt_batches(dataset, batch_size, shuffle=True,
         for name, _ in data_dict.items():
             out_data_dict[name] = data_dict[name][sorted_length_indices].to(device)
         yield out_data_dict
+
+def preprocess_text(text):
+    """ Placeholder """
+    return text
