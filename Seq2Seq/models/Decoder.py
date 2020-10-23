@@ -67,7 +67,7 @@ class GRUDecoder(BasicDecoder):
     
 
     def forward(self, encoder_state, initial_hidden_state, target_sequence,
-                sample_probability):
+                sample_probability, inference, beam_size):
         """ The forward pass of the model
             
         Args:
@@ -132,7 +132,10 @@ class GRUDecoder(BasicDecoder):
             #         prediction for the next word
             prediction_vector = torch.cat((context_vectors, h_t), dim=1)
             score_for_y_t_index = self.classifier(prediction_vector)
-            
+            # Step 4-a: In inference use beam search
+            if inference:
+                pass
+                        
             # Sampling for next loop
             p_y_t_index = F.softmax(score_for_y_t_index * self._sample_temperature, dim=1)
             y_t_index = torch.multinomial(p_y_t_index, 1).squeeze()
