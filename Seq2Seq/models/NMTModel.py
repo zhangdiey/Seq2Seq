@@ -16,7 +16,8 @@ class BasicNMTModel(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    def forward(self, x_source, x_source_lengths, target_sequence, sample_probability):
+    def forward(self, x_source, x_source_lengths, target_sequence, sample_probability, 
+                inference, beam_size):
         """ The forward pass of the model
         Args:
             x_source (torch.Tensor): the source text data tensor
@@ -31,7 +32,9 @@ class BasicNMTModel(nn.Module):
         decoded_state = self.decoder(encoder_state=encoder_state,
                                      initial_hidden_state=final_hidden_state,
                                      target_sequence=target_sequence,
-                                     sample_probability=sample_probability)
+                                     sample_probability=sample_probability,
+                                     inference=inference, 
+                                     beam_size=beam_size)
 
         return decoded_state
     
